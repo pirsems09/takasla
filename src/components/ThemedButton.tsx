@@ -1,6 +1,6 @@
 import React from "react";
-import { Button } from "@ant-design/react-native";
 import { useTheme } from "../hooks/useTheme";
+import { Button } from 'react-native-paper';
 
 type ThemedButtonProps = { children: React.ReactNode, onPress: () => void };
 
@@ -9,7 +9,7 @@ export const ThemedButton = ({ children, onPress }: ThemedButtonProps) => {
 
   return (
     <Button
-      type="primary"
+      mode="contained"
       style={{
         backgroundColor: colors.primary,
         borderColor: colors.primary,

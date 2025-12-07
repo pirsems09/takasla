@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Toast } from "@ant-design/react-native";
+import { Alert } from "react-native";
 import { useAuthStore } from "../store/authStore";
 
 const api = axios.create({
@@ -40,7 +40,8 @@ api.interceptors.response.use(
       message = error.response.data?.message || "Bir hata oluştu.";
     }
 
-    Toast.fail(message, 2);
+    Alert.alert("Hata", message);
+    
     return Promise.reject(error);
   }
 );
