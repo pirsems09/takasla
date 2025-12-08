@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,11 +7,31 @@ import {
   ScrollView,
   SafeAreaView,
   Dimensions,
+  Alert,
+  Linking,
+  Modal
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { useTheme } from "../hooks/useTheme";
 import { ThemedText } from "../components/ThemedText";
 import { products, Product } from "../data/mockData";
+
+// Optional import for Google Mobile Ads
+let mobileAds: any;
+let AdEventType: any;
+let InterstitialAd: any;
+let TestIds: any;
+
+try {
+  const adsModule = require("react-native-google-mobile-ads");
+  mobileAds = adsModule.default;
+  AdEventType = adsModule.AdEventType;
+  InterstitialAd = adsModule.InterstitialAd;
+  TestIds = adsModule.TestIds;
+} catch (e) {
+  console.warn("Google Mobile Ads module not available:", e);
+}
 
 const { width } = Dimensions.get("window");
 
@@ -23,6 +43,52 @@ const ProductDetailScreen = ({ route, navigation }: { route: any; navigation: an
   const images = product.images?.length ? product.images : [product.image];
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView | null>(null);
+  const [adLoaded, setAdLoaded] = useState(false);
+  const pendingMapRef = useRef(false);
+  const [mapModalVisible, setMapModalVisible] = useState(false);
+  const adsAvailable = mobileAds && InterstitialAd && AdEventType && TestIds;
+  const adUnitId = adsAvailable && __DEV__ ? TestIds.INTERSTITIAL : "ca-app-pub-xxxxxxxxxxxxxxxx/interstitial";
+  const interstitialRef = useRef(
+    adsAvailable
+      ? InterstitialAd.createForAdRequest(adUnitId, {
+          requestNonPersonalizedAdsOnly: true,
+        })
+      : null
+  );
+
+  useEffect(() => {
+    if (!adsAvailable) return;
+
+    try {
+      mobileAds()
+        .initialize()
+        .catch(() => null);
+
+      if (interstitialRef.current) {
+        const adLoadSub = interstitialRef.current.addAdEventListener(AdEventType.LOADED, () =>
+          setAdLoaded(true)
+        );
+        const adCloseSub = interstitialRef.current.addAdEventListener(AdEventType.CLOSED, () => {
+          if (pendingMapRef.current) {
+            pendingMapRef.current = false;
+            openAddressInMaps();
+          }
+          if (interstitialRef.current) {
+            interstitialRef.current.load();
+          }
+        });
+
+        interstitialRef.current.load();
+
+        return () => {
+          adLoadSub();
+          adCloseSub();
+        };
+      }
+    } catch (error) {
+      console.warn("Error initializing ads:", error);
+    }
+  }, [adsAvailable]);
 
   const goChat = () => {
     const threadId = `thread-${product.id}`;
@@ -35,6 +101,51 @@ const ProductDetailScreen = ({ route, navigation }: { route: any; navigation: an
   };
 
   const tags = [product.tags[0] ?? "Özel", product.tags[1] ?? "Trend"];
+
+  // İstanbul için varsayılan koordinatlar (Üsküdar)
+  const getCoordinatesFromAddress = (address: string) => {
+    // Basit bir geocoding - gerçek uygulamada Google Geocoding API kullanılabilir
+    if (address.toLowerCase().includes("üsküdar")) {
+      return { latitude: 41.0214, longitude: 29.0097 };
+    }
+    if (address.toLowerCase().includes("kadıköy")) {
+      return { latitude: 40.9819, longitude: 29.0256 };
+    }
+    if (address.toLowerCase().includes("beşiktaş")) {
+      return { latitude: 41.0422, longitude: 29.0081 };
+    }
+    // Varsayılan İstanbul koordinatları
+    return { latitude: 41.0082, longitude: 28.9784 };
+  };
+
+  const openAddressInMaps = () => {
+    if (!product.address) return;
+    const query = encodeURIComponent(product.address);
+    const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+    Linking.openURL(url).catch(() =>
+      Alert.alert("Harita açılamadı", "Lütfen Google Maps'in kurulu olduğundan emin olun.")
+    );
+  };
+
+  const handleShowDetails = () => {
+    if (!adsAvailable || !interstitialRef.current) {
+      openAddressInMaps();
+      return;
+    }
+
+    if (adLoaded) {
+      pendingMapRef.current = true;
+      interstitialRef.current.show();
+      setAdLoaded(false);
+    } else {
+      interstitialRef.current.load();
+      openAddressInMaps();
+    }
+  };
+
+  const mapCoordinates = product.address
+    ? getCoordinatesFromAddress(product.address)
+    : { latitude: 41.0082, longitude: 28.9784 };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: "#f3f5f8" }]}>
@@ -148,6 +259,9 @@ const ProductDetailScreen = ({ route, navigation }: { route: any; navigation: an
                     {product.address}
                   </ThemedText>
                 </View>
+                <ThemedText style={styles.detailsLink} onPress={handleShowDetails}>
+                  Detaylı Gör {`>`}
+                </ThemedText>
               </View>
             </View>
           ) : null}
@@ -163,6 +277,54 @@ const ProductDetailScreen = ({ route, navigation }: { route: any; navigation: an
           <ThemedText style={[styles.buyText, { color: accent }]}>Hemen Al</ThemedText>
         </TouchableOpacity>
       </View>
+
+      {/* Map Modal */}
+      <Modal
+        visible={mapModalVisible}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setMapModalVisible(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setMapModalVisible(false)}
+            >
+              <Icon name="close" size={24} color={accent} />
+            </TouchableOpacity>
+            <View style={styles.modalHeaderContent}>
+              <ThemedText style={[styles.modalTitle, { color: accent }]}>Konum</ThemedText>
+              {product.address && (
+                <ThemedText style={[styles.modalAddress, { color: "#4b4e53" }]} numberOfLines={2}>
+                  {product.address}
+                </ThemedText>
+              )}
+            </View>
+          </View>
+          <MapView
+            provider={PROVIDER_GOOGLE}
+            style={styles.map}
+            initialRegion={{
+              ...mapCoordinates,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
+            showsUserLocation={false}
+            showsMyLocationButton={false}
+          >
+            <Marker
+              coordinate={mapCoordinates}
+              title={product.title}
+              description={product.address}
+            >
+              <View style={styles.customMarker}>
+                <Icon name="map-marker" size={32} color="#6c8cff" />
+              </View>
+            </Marker>
+          </MapView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -309,6 +471,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 4,
   },
+  detailsLink: {
+    color: "#6c8cff",
+    fontWeight: "800",
+  },
   bottomBar: {
     flexDirection: "row",
     paddingHorizontal: 18,
@@ -340,5 +506,46 @@ const styles = StyleSheet.create({
   buyText: {
     fontSize: 14,
     fontWeight: "800",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#f3f5f8",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e1e4ea",
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f3f5f8",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  modalHeaderContent: {
+    flex: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  modalAddress: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  map: {
+    flex: 1,
+  },
+  customMarker: {
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
