@@ -35,6 +35,12 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSCameraUsageDescription</key>
+	<string>İlan fotoğrafları çekmek için kamera erişimine ihtiyacımız var.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>İlan fotoğrafları seçmek için fotoğraf kütüphanesi erişimine ihtiyacımız var.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Çektiğiniz fotoğrafları kaydetmek için fotoğraf kütüphanesi erişimine ihtiyacımız var.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

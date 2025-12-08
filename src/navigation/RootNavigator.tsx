@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
-import HomeScreen from "../screens/HomeScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import IntroScreen from "../screens/IntroScreen";
 import { useIntroStore } from "../store/introStore";
 import { useTheme } from "../hooks/useTheme";
+import MainTabs from "./MainTabs";
+import ProductDetailScreen from "../screens/ProductDetailScreen";
+import ChatScreen from "../screens/ChatScreen";
+import CreateListingScreen from "../screens/CreateListingScreen";
+import AllListingsScreen from "../screens/AllListingsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -36,7 +40,19 @@ const RootNavigator = () => {
       {!hasSeenIntro ? (
         <Stack.Screen name="Intro" component={IntroScreen} />
       ) : null}
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: "Ana Sayfa", headerShown: true }} />
+      <Stack.Screen name="Home" component={MainTabs} />
+      <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen
+        name="CreateListingModal"
+        component={CreateListingScreen}
+        options={{ presentation: "modal", headerShown: false }}
+      />
+      <Stack.Screen
+        name="AllListings"
+        component={AllListingsScreen}
+        options={{ headerShown: true, title: "Tüm İlanlar" }}
+      />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: "Ayarlar", headerShown: true }} />
     </Stack.Navigator>
   );

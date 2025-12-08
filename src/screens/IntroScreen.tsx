@@ -16,7 +16,7 @@ import { ThemedText } from "../components/ThemedText";
 import { useTheme } from "../hooks/useTheme";
 import { useIntroStore } from "../store/introStore";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 type SlideKind = "hero" | "topics" | "reasons";
 type Slide = { id: string; kind: SlideKind };
