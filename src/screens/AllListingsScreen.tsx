@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, Image, TouchableOpacity, SafeAreaView } f
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ThemedText } from "../components/ThemedText";
 import { products } from "../data/mockData";
+import { AdBanner } from "../components/AdBanner";
 
 type SortKey = "recommend" | "priceAsc" | "priceDesc";
 
@@ -90,6 +91,9 @@ const AllListingsScreen = ({ navigation }: { navigation: any }) => {
             </View>
           </TouchableOpacity>
         ))}
+
+        {/* Banner Reklam */}
+        <AdBanner containerStyle={{ marginTop: 20 }} />
       </ScrollView>
     </SafeAreaView>
   );

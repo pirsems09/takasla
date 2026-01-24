@@ -12,17 +12,21 @@ import {
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ThemedText } from "../components/ThemedText";
 import { products } from "../data/mockData";
+import { AdBanner } from "../components/AdBanner";
+
+import { useTheme } from "../hooks/useTheme";
 
 const ListingScreen = ({ navigation }: { navigation: any }) => {
-  const accent = "#1b1d1f";
-  const muted = "#7a7d82";
+  const { colors } = useTheme();
+  const accent = colors.text;
+  const muted = colors.textSecondary;
 
   const goToDetail = (productId: string) => {
     navigation.navigate("ProductDetail", { productId });
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "#f3f5f8" }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
@@ -137,6 +141,9 @@ const ListingScreen = ({ navigation }: { navigation: any }) => {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Banner Reklam */}
+        <AdBanner containerStyle={{ marginTop: 10, marginBottom: 20 }} />
       </ScrollView>
     </SafeAreaView>
   );

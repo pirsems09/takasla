@@ -2430,7 +2430,7 @@ PODS:
     - Yoga
   - RNCMaskedView (0.1.11):
     - React
-  - RNDateTimePicker (8.5.1):
+  - RNDateTimePicker (8.6.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2909,7 +2909,7 @@ SPEC CHECKSUMS:
   ReactCommon: 116d6ee71679243698620d8cd9a9042541e44aa6
   RNCAsyncStorage: 01e4301688a611936e3644746ffe3325d3181952
   RNCMaskedView: 4c5ee1c8667d56077246cc6d1977f77393923560
-  RNDateTimePicker: 243cc82889368422dab234d73dec63d6cdb1e70f
+  RNDateTimePicker: 97a86d7c8b51f2d51f694a9dddfe5996dfd9a407
   RNGoogleMobileAds: e05caac9cc08589cbc6d403c0ec082383c76f5b2
   RNScreens: 6b210a35db9d7f61b2004b6bf3a639fba95c154c
   RNVectorIcons: 791f13226ec4a3fd13062eda9e892159f0981fae

@@ -2,6 +2,7 @@ import React from "react";
 import { View, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Image } from "react-native";
 import { ThemedText } from "../components/ThemedText";
 import { threads } from "../data/mockData";
+import { AdBanner } from "../components/AdBanner";
 
 const ChatHistoryScreen = ({ navigation }: { navigation: any }) => {
   const goChat = (id: string) => {
@@ -33,6 +34,7 @@ const ChatHistoryScreen = ({ navigation }: { navigation: any }) => {
             </View>
           </TouchableOpacity>
         )}
+        ListFooterComponent={() => <AdBanner containerStyle={{ marginTop: 10 }} />}
       />
     </SafeAreaView>
   );

@@ -51,8 +51,8 @@ const ProductDetailScreen = ({ route, navigation }: { route: any; navigation: an
   const interstitialRef = useRef(
     adsAvailable
       ? InterstitialAd.createForAdRequest(adUnitId, {
-          requestNonPersonalizedAdsOnly: true,
-        })
+        requestNonPersonalizedAdsOnly: true,
+      })
       : null
   );
 
@@ -167,7 +167,7 @@ const ProductDetailScreen = ({ route, navigation }: { route: any; navigation: an
           </ScrollView>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.navigate("Liste")}
+            onPress={() => navigation.navigate("Home")}
           >
             <Icon name="chevron-left" size={22} color={accent} />
           </TouchableOpacity>
@@ -180,7 +180,7 @@ const ProductDetailScreen = ({ route, navigation }: { route: any; navigation: an
                 key={index}
                 style={[
                   styles.dot,
-                  activeIndex === index && styles.dotActive,
+                  activeIndex === index && { backgroundColor: colors.secondary },
                 ]}
               />
             ))}
@@ -189,10 +189,10 @@ const ProductDetailScreen = ({ route, navigation }: { route: any; navigation: an
 
         <View style={styles.content}>
           <View style={styles.titleRow}>
-            <ThemedText style={[styles.title, { color: accent }]}>
+            <ThemedText style={[styles.title, { color: colors.text }]}>
               {product.title}
             </ThemedText>
-            <ThemedText style={[styles.price, { color: accent }]}>
+            <ThemedText style={[styles.price, { color: colors.text }]}>
               {product.priceMin && product.priceMax
                 ? `${product.priceMin} - ${product.priceMax} ₺`
                 : `${product.currency} ${product.price}`}
@@ -200,66 +200,54 @@ const ProductDetailScreen = ({ route, navigation }: { route: any; navigation: an
           </View>
           <View style={styles.tagRow}>
             {tags.map((tag) => (
-              <View key={tag} style={styles.pill}>
-                <ThemedText style={styles.pillText}>{tag}</ThemedText>
+              <View key={tag} style={[styles.pill, { backgroundColor: colors.border }]}>
+                <ThemedText style={[styles.pillText, { color: colors.text }]}>{tag}</ThemedText>
               </View>
             ))}
           </View>
 
           <View style={styles.specGrid}>
             {product.category ? (
-              <View style={styles.specBox}>
-                <ThemedText style={styles.specLabel}>Kategori</ThemedText>
-                <ThemedText style={[styles.specValue, { color: accent }]}>
+              <View style={[styles.specBox, { backgroundColor: colors.surface }]}>
+                <ThemedText style={[styles.specLabel, { color: colors.textSecondary }]}>Kategori</ThemedText>
+                <ThemedText style={[styles.specValue, { color: colors.text }]}>
                   {product.category}
                 </ThemedText>
               </View>
             ) : null}
             {product.condition ? (
-              <View style={styles.specBox}>
-                <ThemedText style={styles.specLabel}>Durum</ThemedText>
-                <ThemedText style={[styles.specValue, { color: accent }]}>
+              <View style={[styles.specBox, { backgroundColor: colors.surface }]}>
+                <ThemedText style={[styles.specLabel, { color: colors.textSecondary }]}>Durum</ThemedText>
+                <ThemedText style={[styles.specValue, { color: colors.text }]}>
                   {product.condition}
                 </ThemedText>
               </View>
             ) : null}
-            <View style={styles.specBox}>
-              <ThemedText style={styles.specLabel}>Numara</ThemedText>
-              <ThemedText style={[styles.specValue, { color: accent }]}>
+            <View style={[styles.specBox, { backgroundColor: colors.surface }]}>
+              <ThemedText style={[styles.specLabel, { color: colors.textSecondary }]}>Numara</ThemedText>
+              <ThemedText style={[styles.specValue, { color: colors.text }]}>
                 {product.size ?? "—"}
-              </ThemedText>
-            </View>
-            <View style={styles.specBox}>
-              <ThemedText style={styles.specLabel}>Topuk</ThemedText>
-              <ThemedText style={[styles.specValue, { color: accent }]}>
-                {product.heelHeight ?? "—"}
-              </ThemedText>
-            </View>
-            <View style={styles.specBox}>
-              <ThemedText style={styles.specLabel}>Kalıp</ThemedText>
-              <ThemedText style={[styles.specValue, { color: accent }]}>
-                {product.width ?? "—"}
               </ThemedText>
             </View>
           </View>
 
-          <ThemedText style={[styles.description, { color: "#4b4e53" }]}>
+          <ThemedText style={[styles.description, { color: colors.textSecondary }]}>
             {product.description}
           </ThemedText>
 
           {product.address ? (
-            <View style={styles.addressCard}>
+            <View style={[styles.addressCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.addressRow}>
-                <Icon name="map-marker-outline" size={22} color="#6c8cff" />
+                <Icon name="map-marker-outline" size={22} color={colors.complementary} />
                 <View style={{ flex: 1 }}>
-                  <ThemedText style={[styles.addressTitle, { color: accent }]}>
+                  <ThemedText style={[styles.addressTitle, { color: colors.text }]}>
                     Adres
                   </ThemedText>
-                  <ThemedText style={[styles.addressText, { color: "#4b4e53" }]}>
+                  <ThemedText style={[styles.addressText, { color: colors.textSecondary }]}>
                     {product.address}
                   </ThemedText>
                 </View>
-                <ThemedText style={styles.detailsLink} onPress={handleShowDetails}>
+                <ThemedText style={[styles.detailsLink, { color: colors.complementary }]} onPress={handleShowDetails}>
                   Detaylı Gör {`>`}
                 </ThemedText>
               </View>
@@ -268,13 +256,13 @@ const ProductDetailScreen = ({ route, navigation }: { route: any; navigation: an
         </View>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
-        <TouchableOpacity style={[styles.chatButton, { backgroundColor: "#2c2f33" }]} onPress={goChat}>
-          <Icon name="chat-processing-outline" size={18} color="#d8ff57" />
-          <ThemedText style={styles.chatText}>Satıcı ile konuş</ThemedText>
+      <View style={[styles.bottomBar, { backgroundColor: colors.background }]}>
+        <TouchableOpacity style={[styles.chatButton, { backgroundColor: colors.secondary }]} onPress={goChat}>
+          <Icon name="chat-processing-outline" size={18} color={colors.primary} />
+          <ThemedText style={[styles.chatText, { color: colors.primary }]}>Satıcı ile konuş</ThemedText>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.buyButton, { backgroundColor: "#d8ff57" }]}>
-          <ThemedText style={[styles.buyText, { color: accent }]}>Hemen Al</ThemedText>
+        <TouchableOpacity style={[styles.buyButton, { backgroundColor: colors.primary }]}>
+          <ThemedText style={[styles.buyText, { color: colors.secondary }]}>Hemen Al</ThemedText>
         </TouchableOpacity>
       </View>
 
