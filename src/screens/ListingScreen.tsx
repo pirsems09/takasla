@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -11,19 +11,24 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ThemedText } from "../components/ThemedText";
-import { products } from "../data/mockData";
+import { products, categories } from "../data/mockData";
 import { AdBanner } from "../components/AdBanner";
 
 import { useTheme } from "../hooks/useTheme";
 
 const ListingScreen = ({ navigation }: { navigation: any }) => {
   const { colors } = useTheme();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const accent = colors.text;
   const muted = colors.textSecondary;
 
   const goToDetail = (productId: string) => {
     navigation.navigate("ProductDetail", { productId });
   };
+
+  const filteredProducts = selectedCategory
+    ? products.filter((p) => p.category === selectedCategory)
+    : products;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -64,31 +69,39 @@ const ListingScreen = ({ navigation }: { navigation: any }) => {
         <View style={styles.favoritesSection}>
           <View style={styles.sectionHeader}>
             <ThemedText style={[styles.sectionTitle, { color: accent }]}>
-              Favori Takas Ürünleri
+              Favori Kategoriler
             </ThemedText>
-            <TouchableOpacity>
-              <ThemedText style={[styles.sectionLink, { color: muted }]}>Tümü</ThemedText>
-            </TouchableOpacity>
           </View>
           <FlatList
-            data={products}
+            data={categories}
             keyExtractor={(item) => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.favoriteList}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.favoriteCard}
-                onPress={() => goToDetail(item.id)}
-                activeOpacity={0.9}
-              >
-                <Image source={{ uri: item.images?.[0] ?? item.image }} style={styles.favoriteImage} />
-                <View style={styles.favoriteOverlay} />
-                <ThemedText style={styles.favoriteTitle} numberOfLines={1}>
-                  {item.title}
-                </ThemedText>
-              </TouchableOpacity>
-            )}
+            renderItem={({ item }) => {
+              const isSelected = selectedCategory === item.title;
+              return (
+                <TouchableOpacity
+                  style={[
+                    styles.favoriteCard,
+                    isSelected && { borderColor: colors.secondary, borderWidth: 2 },
+                  ]}
+                  onPress={() =>
+                    setSelectedCategory(isSelected ? null : item.title)
+                  }
+                  activeOpacity={0.9}
+                >
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.favoriteImage}
+                  />
+                  <View style={styles.favoriteOverlay} />
+                  <ThemedText style={styles.favoriteTitle} numberOfLines={1}>
+                    {item.title}
+                  </ThemedText>
+                </TouchableOpacity>
+              );
+            }}
           />
         </View>
 
@@ -101,7 +114,7 @@ const ListingScreen = ({ navigation }: { navigation: any }) => {
         </View>
 
         <View style={styles.grid}>
-          {products.slice(0, 10).map((item) => (
+          {filteredProducts.slice(0, 10).map((item) => (
             <TouchableOpacity
               key={item.id}
               style={styles.card}
@@ -246,8 +259,7 @@ const styles = StyleSheet.create({
   favoriteCard: {
     width: 90,
     height: 90,
-    borderWidth: 2,
-    borderRadius: 45,
+    borderRadius: 16,
     overflow: "hidden",
     marginRight: 12,
     marginBottom: 20,
@@ -263,12 +275,13 @@ const styles = StyleSheet.create({
   },
   favoriteTitle: {
     position: "absolute",
-    bottom: 10,
-    left: 8,
-    right: 8,
+    bottom: "35%",
+    left: 4,
+    right: 4,
     color: "#ffffff",
     fontWeight: "800",
-    fontSize: 13,
+    fontSize: 12,
+    textAlign: "center",
   },
   grid: {
     flexDirection: "row",
