@@ -14,6 +14,8 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { launchImageLibrary, launchCamera, ImagePickerResponse, MediaType } from "react-native-image-picker";
 import { ThemedText } from "../components/ThemedText";
 import { ThemedButton } from "../components/ThemedButton";
+import { categories } from "../data/mockData";
+import { useTheme } from "../hooks/useTheme";
 
 const seedImages = [
   "https://images.unsplash.com/photo-1504198266285-165a04f2b417?auto=format&fit=crop&w=800&q=80",
@@ -21,12 +23,12 @@ const seedImages = [
   "https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=800&q=80",
 ];
 
-const categories = ["Araba", "Ev Eşyası", "Elektronik", "Moda", "Kitap", "Hobi", "Diğer"];
 
 const CreateListingScreen = () => {
-  const accent = "#6c8cff";
-  const dark = "#1f2125";
-  const muted = "#7a7d82";
+  const { colors } = useTheme();
+  const accent = colors.complementary;
+  const dark = colors.text;
+  const muted = colors.textSecondary;
   const [images, setImages] = useState(seedImages);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -35,6 +37,7 @@ const CreateListingScreen = () => {
   const [address, setAddress] = useState("Üsküdar, İstanbul"); // assume profilden geliyor
   const [addressInput, setAddressInput] = useState("");
   const [hasProfileAddress, setHasProfileAddress] = useState(true);
+  const [isDonation, setIsDonation] = useState(false);
 
   const addPhoto = () => {
     const url = newImageUrl.trim();
@@ -127,13 +130,14 @@ const CreateListingScreen = () => {
   };
 
   const priceRangeLabel = useMemo(() => {
+    if (isDonation) return "Bağış Ürünü (Ücretsiz)";
     if (!priceMin && !priceMax) return "Tahmini aralık";
     if (priceMin && priceMax) return `${priceMin} - ${priceMax} ₺`;
     return priceMin ? `${priceMin}+ ₺` : `~${priceMax} ₺`;
-  }, [priceMin, priceMax]);
+  }, [priceMin, priceMax, isDonation]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "#f7f8fb" }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
@@ -142,7 +146,7 @@ const CreateListingScreen = () => {
               Fotoğrafları yükle, detayları doldur ve hemen paylaş.
             </ThemedText>
           </View>
-          <TouchableOpacity style={styles.helpChip}>
+          <TouchableOpacity style={[styles.helpChip, { backgroundColor: colors.secondary + "20" }]}>
             <Icon name="chat-question-outline" size={18} color={accent} />
             <ThemedText style={[styles.helpText, { color: accent }]}>Yardım</ThemedText>
           </TouchableOpacity>
@@ -154,29 +158,29 @@ const CreateListingScreen = () => {
             <ThemedText style={[styles.sectionHint, { color: muted }]}>En az 1, en çok 10</ThemedText>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroller}>
-            <TouchableOpacity 
-              style={[styles.photoBox, styles.addPhotoBox]}
+            <TouchableOpacity
+              style={[styles.photoBox, styles.addPhotoBox, { borderColor: colors.textSecondary, backgroundColor: colors.secondary + "0A" }]}
               onPress={handleImagePicker}
             >
-              <Icon name="plus" size={28} color={accent} />
-              <ThemedText style={[styles.addPhotoText, { color: accent }]}>Fotoğraf ekle</ThemedText>
+              <Icon name="plus" size={28} />
+              <ThemedText style={[styles.addPhotoText]}>Fotoğraf ekle</ThemedText>
             </TouchableOpacity>
             {images.map((uri) => (
               <Image key={uri} source={{ uri }} style={styles.photoBox} />
             ))}
           </ScrollView>
           <View style={styles.addRow}>
-            <View style={[styles.inputWithIcon, styles.flex]}>
+            <View style={[styles.inputWithIcon, styles.flex, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Icon name="link-variant" size={18} color={muted} />
               <TextInput
                 placeholder="Fotoğraf URL'si gir veya yapıştır"
                 placeholderTextColor={muted}
                 value={newImageUrl}
                 onChangeText={setNewImageUrl}
-                style={[styles.input, styles.noPadding, styles.flex]}
+                style={[styles.input, styles.noPadding, styles.flex, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
               />
             </View>
-            <TouchableOpacity style={[styles.softButton, { backgroundColor: accent }]} onPress={addPhoto}>
+            <TouchableOpacity style={[styles.softButton, { backgroundColor: colors.secondary }]} onPress={addPhoto}>
               <Icon name="check" size={18} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -189,7 +193,7 @@ const CreateListingScreen = () => {
             <TextInput
               placeholder="Örn: Yeşil çift kişilik kanepe"
               placeholderTextColor={muted}
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
             />
           </View>
           <View style={styles.inputBlock}>
@@ -197,7 +201,7 @@ const CreateListingScreen = () => {
             <TextInput
               placeholder="Durumu, özellikleri ve ek bilgileri yaz."
               placeholderTextColor={muted}
-              style={[styles.input, styles.multiline]}
+              style={[styles.input, styles.multiline, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
               multiline
               numberOfLines={4}
               textAlignVertical="top"
@@ -210,22 +214,22 @@ const CreateListingScreen = () => {
           <View style={styles.chips}>
             {categories.map((cat) => (
               <TouchableOpacity
-                key={cat}
+                key={cat.id}
                 style={[
                   styles.chip,
-                  { borderColor: accent },
-                  selectedCategory === cat && { backgroundColor: accent + "1A", borderColor: accent },
+                  { borderColor: colors.border, backgroundColor: colors.surface },
+                  selectedCategory === cat.title && { backgroundColor: colors.secondary + "1A", borderColor: colors.secondary },
                 ]}
-                onPress={() => setSelectedCategory(cat)}
+                onPress={() => setSelectedCategory(cat.title)}
                 activeOpacity={0.9}
               >
                 <ThemedText
                   style={[
                     styles.chipText,
-                    { color: selectedCategory === cat ? dark : muted },
+                    { color: selectedCategory === cat.title ? dark : muted },
                   ]}
                 >
-                  {cat}
+                  {cat.title}
                 </ThemedText>
               </TouchableOpacity>
             ))}
@@ -233,35 +237,70 @@ const CreateListingScreen = () => {
         </View>
 
         <View style={styles.section}>
+          <TouchableOpacity
+            style={[
+              styles.donationToggle,
+              { borderColor: isDonation ? colors.secondary : colors.border, backgroundColor: colors.surface },
+              isDonation && { backgroundColor: colors.secondary + "0A" }
+            ]}
+            onPress={() => {
+              setIsDonation(!isDonation);
+              if (!isDonation) {
+                setPriceMin("0");
+                setPriceMax("0");
+              }
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.donationIconWrapper, { backgroundColor: colors.background }]}>
+              <Icon name="heart-flash" size={24} color={isDonation ? colors.secondary : muted} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <ThemedText style={[styles.sectionTitle, { color: dark, fontSize: 15 }]}>
+                Bu ürünü bağışlamak istiyorum
+              </ThemedText>
+              <ThemedText style={[styles.sectionHint, { color: "#7a7d82" }]}>
+                İhtiyacı olanlara ücretsiz ulaştırın.
+              </ThemedText>
+            </View>
+            <View style={[styles.toggleTrack, { backgroundColor: colors.border }, isDonation && { backgroundColor: colors.secondary }]}>
+              <View style={[styles.toggleThumb, { backgroundColor: colors.surface }, isDonation && { transform: [{ translateX: 18 }] }]} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.section, isDonation && { opacity: 0.5 }]}>
           <ThemedText style={[styles.sectionTitle, { color: dark }]}>Tahmini fiyat aralığı</ThemedText>
           <ThemedText style={[styles.sectionHint, { color: muted }]}>
-            Takas odaklı. Alıcıya fikir vermek için aralık ekle.
+            {isDonation ? "Bağış ürünlerinde fiyat girilemez." : "Takas odaklı. Alıcıya fikir vermek için aralık ekle."}
           </ThemedText>
           <View style={styles.row}>
             <View style={[styles.inputBlock, styles.half]}>
               <ThemedText style={[styles.label, { color: dark }]}>Minimum</ThemedText>
-              <View style={styles.inputWithIcon}>
+              <View style={[styles.inputWithIcon, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <TextInput
                   placeholder="1000"
                   placeholderTextColor={muted}
                   keyboardType="numeric"
                   value={priceMin}
                   onChangeText={setPriceMin}
-                  style={[styles.input, styles.noPadding, styles.flex]}
+                  editable={!isDonation}
+                  style={[styles.input, styles.noPadding, styles.flex, { backgroundColor: colors.surface, color: colors.text }]}
                 />
                 <ThemedText style={[styles.suffix, { color: dark }]}>₺</ThemedText>
               </View>
             </View>
             <View style={[styles.inputBlock, styles.half]}>
               <ThemedText style={[styles.label, { color: dark }]}>Maksimum</ThemedText>
-              <View style={styles.inputWithIcon}>
+              <View style={[styles.inputWithIcon, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <TextInput
                   placeholder="3000"
                   placeholderTextColor={muted}
                   keyboardType="numeric"
                   value={priceMax}
                   onChangeText={setPriceMax}
-                  style={[styles.input, styles.noPadding, styles.flex]}
+                  editable={!isDonation}
+                  style={[styles.input, styles.noPadding, styles.flex, { backgroundColor: colors.surface, color: colors.text }]}
                 />
                 <ThemedText style={[styles.suffix, { color: dark }]}>₺</ThemedText>
               </View>
@@ -280,7 +319,7 @@ const CreateListingScreen = () => {
               </TouchableOpacity>
             ) : null}
           </View>
-          <View style={styles.locationCard}>
+          <View style={[styles.locationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {hasProfileAddress && address ? (
               <>
                 <View style={styles.locationRow}>
@@ -304,7 +343,7 @@ const CreateListingScreen = () => {
                   placeholderTextColor={muted}
                   value={addressInput}
                   onChangeText={setAddressInput}
-                  style={[styles.input, styles.multiline]}
+                  style={[styles.input, styles.multiline, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
                   multiline
                   numberOfLines={3}
                   textAlignVertical="top"
@@ -316,7 +355,7 @@ const CreateListingScreen = () => {
         </View>
 
         <View style={styles.footer}>
-          <ThemedButton onPress={() => {}}>İlanı Yayınla</ThemedButton>
+          <ThemedButton onPress={() => { }}>İlanı Yayınla</ThemedButton>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -330,53 +369,56 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 18,
-    paddingBottom: 60,
+    padding: 24,
+    paddingBottom: 80,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 26,
+    fontWeight: "900",
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
-    marginTop: 6,
-    lineHeight: 20,
+    marginTop: 8,
+    lineHeight: 22,
+    opacity: 0.8,
   },
   helpChip: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#e9f9ef",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
     marginLeft: 10,
-    gap: 6,
+    gap: 8,
   },
   helpText: {
-    fontWeight: "700",
+    fontWeight: "800",
     fontSize: 13,
   },
   section: {
-    marginTop: 18,
+    marginTop: 36,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "800",
   },
   sectionHint: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
+    opacity: 0.7,
   },
   badgeInfo: {
     marginTop: 8,
@@ -384,50 +426,43 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   photoBox: {
-    width: 110,
-    height: 110,
-    borderRadius: 16,
-    marginRight: 12,
-    backgroundColor: "#dbe2ea",
+    width: 120,
+    height: 120,
+    borderRadius: 24,
+    marginRight: 16,
   },
   addPhotoBox: {
-    borderWidth: 1.2,
-    borderColor: "#4ad17b",
-    backgroundColor: "rgba(74,209,123,0.06)",
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
   },
   addPhotoText: {
-    fontSize: 12,
-    fontWeight: "700",
-    marginTop: 6,
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 8,
   },
   photoScroller: {
-    marginBottom: 10,
+    marginBottom: 16,
   },
   addRow: {
     width: "100%",
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
+    marginTop: 8,
   },
   inputBlock: {
-    marginTop: 10,
+    marginTop: 18,
   },
   label: {
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: "800",
+    marginBottom: 10,
   },
   input: {
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#e1e4ea",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
   },
   multiline: {
     minHeight: 120,
@@ -435,19 +470,50 @@ const styles = StyleSheet.create({
   chips: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginTop: 10,
+    gap: 10,
+    marginTop: 14,
   },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 18,
     borderWidth: 1,
-    backgroundColor: "#ffffff",
   },
   chipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
+  },
+  donationToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    gap: 16,
+  },
+  donationIconWrapper: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  toggleTrack: {
+    width: 48,
+    height: 26,
+    borderRadius: 14,
+    padding: 2,
+    justifyContent: "center",
+  },
+  toggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
   },
   row: {
     flexDirection: "row",
@@ -459,10 +525,8 @@ const styles = StyleSheet.create({
   inputWithIcon: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ffffff",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#e1e4ea",
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
@@ -483,7 +547,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#ffffff",
     borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -494,7 +557,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   softButton: {
-    backgroundColor: "#e9ecf4",
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -502,7 +564,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   softButtonText: {
-    color: "#1f2125",
     fontWeight: "700",
   },
   linkRow: {
@@ -515,26 +576,30 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   locationCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 14,
-    marginTop: 10,
+    borderRadius: 24,
+    padding: 20,
+    marginTop: 14,
     borderWidth: 1,
-    borderColor: "#e1e4ea",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginBottom: 10,
+    gap: 12,
+    marginBottom: 16,
   },
   locationTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "800",
   },
   locationSub: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 13,
+    marginTop: 6,
+    opacity: 0.7,
   },
   mapThumb: {
     marginTop: 6,
@@ -547,6 +612,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   footer: {
-    marginTop: 20,
+    marginTop: 40,
+    marginBottom: 20,
   },
 });

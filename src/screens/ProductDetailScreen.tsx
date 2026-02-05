@@ -192,12 +192,20 @@ const ProductDetailScreen = ({ route, navigation }: { route: any; navigation: an
             <ThemedText style={[styles.title, { color: colors.text }]}>
               {product.title}
             </ThemedText>
-            <ThemedText style={[styles.price, { color: colors.text }]}>
-              {product.priceMin && product.priceMax
-                ? `${product.priceMin} - ${product.priceMax} ₺`
-                : `${product.currency} ${product.price}`}
+            <ThemedText style={[styles.price, { color: product.isDonation ? "#4ad17b" : colors.text }]}>
+              {product.isDonation ? "ÜCRETSİZ" : (
+                product.priceMin && product.priceMax
+                  ? `${product.priceMin} - ${product.priceMax} ₺`
+                  : `${product.currency} ${product.price}`
+              )}
             </ThemedText>
           </View>
+          {product.isDonation && (
+            <View style={styles.donationBadge}>
+              <Icon name="heart-flash" size={16} color="#4ad17b" />
+              <ThemedText style={styles.donationBadgeText}>Bu bir bağış ürünüdür</ThemedText>
+            </View>
+          )}
           <View style={styles.tagRow}>
             {tags.map((tag) => (
               <View key={tag} style={[styles.pill, { backgroundColor: colors.border }]}>
@@ -407,6 +415,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: "#3a3d42",
+  },
+  donationBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(74,209,123,0.1)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 8,
+    alignSelf: "flex-start",
+    gap: 6,
+  },
+  donationBadgeText: {
+    color: "#4ad17b",
+    fontSize: 12,
+    fontWeight: "700",
   },
   specGrid: {
     marginTop: 12,

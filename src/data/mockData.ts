@@ -16,6 +16,7 @@ export type Product = {
   priceMin?: string;
   priceMax?: string;
   address?: string;
+  isDonation?: boolean;
 };
 
 export type Thread = {
@@ -209,6 +210,71 @@ export const products: Product[] = [
     priceMin: "100",
     priceMax: "200",
     address: "Ümraniye, İstanbul",
+  },
+  {
+    id: "donation-1",
+    title: "Sessiz Kitap - Bebek Aktivite",
+    price: "0",
+    currency: "₺",
+    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=800&q=80",
+    badge: "BAĞIŞ",
+    tags: ["Eğitici", "Bebek"],
+    description: "İhtiyacı olan bir aileye bağışlamak istiyoruz. Tertemiz durumda.",
+    category: "Bebek",
+    condition: "Yeni Like",
+    priceMin: "0",
+    priceMax: "0",
+    address: "Kadıköy, İstanbul",
+    isDonation: true,
+  },
+
+  {
+    id: "donation-2",
+    title: "2 - Bebek Aktivite",
+    price: "0",
+    currency: "₺",
+    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=800&q=80",
+    badge: "BAĞIŞ",
+    tags: ["Eğitici", "Bebek"],
+    description: "İhtiyacı olan bir aileye bağışlamak istiyoruz. Tertemiz durumda.",
+    category: "Bebek",
+    condition: "Yeni Like",
+    priceMin: "0",
+    priceMax: "0",
+    address: "Kadıköy, İstanbul",
+    isDonation: true,
+  },
+  {
+    id: "donation-3",
+    title: "3 - Bebek Aktivite",
+    price: "0",
+    currency: "₺",
+    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=800&q=80",
+    badge: "BAĞIŞ",
+    tags: ["Eğitici", "Bebek"],
+    description: "İhtiyacı olan bir aileye bağışlamak istiyoruz. Tertemiz durumda.",
+    category: "Bebek",
+    condition: "Yeni Like",
+    priceMin: "0",
+    priceMax: "0",
+    address: "Kadıköy, İstanbul",
+    isDonation: true,
+  },
+  {
+    id: "donation-4",
+    title: "4 - Bebek Aktivite",
+    price: "0",
+    currency: "₺",
+    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=800&q=80",
+    badge: "BAĞIŞ",
+    tags: ["Eğitici", "Bebek"],
+    description: "İhtiyacı olan bir aileye bağışlamak istiyoruz. Tertemiz durumda.",
+    category: "Bebek",
+    condition: "Yeni Like",
+    priceMin: "0",
+    priceMax: "0",
+    address: "Kadıköy, İstanbul",
+    isDonation: true,
   },
 ];
 
