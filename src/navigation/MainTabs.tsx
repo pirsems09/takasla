@@ -113,7 +113,8 @@ const AnimatedTabBar = ({
             <Icon
               name={tabIcons[route.name as TabRoute]}
               size={22}
-              color={isFocused ? "#f6f7fb" : "#8f939b"}
+                color={isFocused ? "#f6f7fb" : "#8f939b"}
+                style={{ marginBottom: 4 }}
             />
             <Text
               style={[
@@ -161,15 +162,15 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
-    gap: 6,
+    paddingVertical: 8,
   },
   tabLabel: {
     fontWeight: "700",
     fontSize: 13,
+    marginTop: 2,
   },
   pill: {
     position: "absolute",

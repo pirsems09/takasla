@@ -24,11 +24,37 @@ target 'takasla' do
   )
 
   post_install do |installer|
+    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
     react_native_post_install(
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Add vector icons fonts to Info.plist
+    installer.pods_project.targets.each do |target|
+      if target.name == 'RCT-Folly'
+        target.build_phases.each do |phase|
+          if phase.display_name == '[CP-User] Copy PodHelpers Scripts'
+            phase.show_env_vars = false
+          end
+        end
+      end
+    end
+
+    # Link vector-icons fonts
+    project = installer.pods_project
+    project.targets.each do |target|
+      if target.name == 'react-native-vector-icons'
+        phase = target.source_build_phase
+        phase.files.each do |build_file|
+          ref = build_file.file_ref
+          if ref.real_path.to_s.include?('Fonts')
+            build_file.settings = { 'COMPASS_IMPORTS' => '**/*.ttf' }
+          end
+        end
+      end
+    end
   end
 end
