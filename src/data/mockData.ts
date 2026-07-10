@@ -16,6 +16,9 @@ export type Product = {
   priceMin?: string;
   priceMax?: string;
   address?: string;
+  listingType?: "sell" | "swap" | "donate";
+  rating?: number;
+  distance?: string;
 };
 
 export type Thread = {
@@ -52,6 +55,9 @@ export const products: Product[] = [
     priceMin: "1000",
     priceMax: "3000",
     address: "Üsküdar, İstanbul",
+    listingType: "sell",
+    rating: 4.6,
+    distance: "0.5 mi",
   },
   {
     id: "2",
@@ -72,6 +78,9 @@ export const products: Product[] = [
     priceMin: "400",
     priceMax: "900",
     address: "Kadıköy, İstanbul",
+    listingType: "swap",
+    rating: 4.2,
+    distance: "0.8 mi",
   },
   {
     id: "3",
@@ -92,6 +101,9 @@ export const products: Product[] = [
     priceMin: "700",
     priceMax: "1500",
     address: "Beşiktaş, İstanbul",
+    listingType: "donate",
+    rating: 4.8,
+    distance: "1.2 mi",
   },
 ];
 

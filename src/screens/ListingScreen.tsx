@@ -1,139 +1,314 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import {
-  View,
-  StyleSheet,
-  ScrollView,
+  ActivityIndicator,
   Image,
-  TouchableOpacity,
-  ImageBackground,
   SafeAreaView,
-  FlatList,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ThemedText } from "../components/ThemedText";
-import { products } from "../data/mockData";
+import type { Product } from "@api/types";
+import { formatPrice } from "../utils/format";
+import { useListingStore } from "../store/listingStore";
+import { useTheme } from "../hooks/useTheme";
 
-const ListingScreen = ({ navigation }: { navigation: any }) => {
-  const accent = "#1b1d1f";
-  const muted = "#7a7d82";
+type ListingNavigation = {
+  navigate: (screen: string, params?: Record<string, string>) => void;
+};
+
+type ListingScreenProps = {
+  navigation: ListingNavigation;
+};
+
+type QuickAction = {
+  id: string;
+  label: string;
+  icon: string;
+  tone: "trade" | "buy" | "check" | "meet";
+};
+
+type CategoryShortcut = {
+  id: string;
+  label: string;
+  icon: string;
+};
+
+type CommunityCard = {
+  id: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  price: string;
+};
+
+type NearbyItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  image: string;
+};
+
+const quickActions: QuickAction[] = [
+  { id: "trade", label: "Trade", icon: "swap-horizontal", tone: "trade" },
+  { id: "buy", label: "Buy", icon: "cash-multiple", tone: "buy" },
+  { id: "check", label: "Check In", icon: "check-decagram-outline", tone: "check" },
+  { id: "meet", label: "Meet", icon: "map-marker-radius-outline", tone: "meet" },
+];
+
+const categoryShortcuts: CategoryShortcut[] = [
+  { id: "furniture", label: "Furniture", icon: "sofa-outline" },
+  { id: "decor", label: "Decor", icon: "lamp-outline" },
+  { id: "fashion", label: "Fashion", icon: "hanger" },
+  { id: "books", label: "Books", icon: "book-open-page-variant-outline" },
+];
+
+const buildCommunityCards = (items: Product[]): CommunityCard[] =>
+  items.map((item) => ({
+    id: item.id,
+    title: item.category ?? item.title,
+    subtitle: item.address ?? "Topluluk önerisi",
+    image: item.image,
+    price: formatPrice(item),
+  }));
+
+const buildNearbyItems = (items: Product[]): NearbyItem[] =>
+  items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    subtitle: item.address ?? "Yakın çevrende",
+    image: item.image,
+  }));
+
+const getQuickActionToneStyle = (tone: QuickAction["tone"]): ViewStyle => {
+  switch (tone) {
+    case "trade":
+      return styles.quickActionTrade;
+    case "buy":
+      return styles.quickActionBuy;
+    case "check":
+      return styles.quickActionCheck;
+    case "meet":
+      return styles.quickActionMeet;
+  }
+};
+
+const ListingScreen = ({ navigation }: ListingScreenProps) => {
+  const { colors } = useTheme();
+  const listings = useListingStore((s) => s.listings);
+  const loading = useListingStore((s) => s.loading);
+  const fetchListings = useListingStore((s) => s.fetchListings);
+
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
+
+  const featuredProduct = listings[0];
+  const smallCards = listings.slice(1, 3);
+  const communityCards = useMemo(
+    () => buildCommunityCards(listings.slice(0, 2)),
+    [listings]
+  );
+  const nearbyItems = useMemo(() => buildNearbyItems(listings), [listings]);
 
   const goToDetail = (productId: string) => {
     navigation.navigate("ProductDetail", { productId });
   };
 
+  if (loading && listings.length === 0) {
+    return (
+      <SafeAreaView style={styles.emptyContainer}>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!featuredProduct) {
+    return (
+      <SafeAreaView style={styles.emptyContainer}>
+        <ThemedText style={styles.emptyText}>Henüz gösterilecek ilan yok.</ThemedText>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "#f3f5f8" }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <View>
-            <ThemedText style={[styles.greeting, { color: accent }]}>
-              Merhaba, Marina
-            </ThemedText>
-            <ThemedText style={[styles.subtitle, { color: muted }]}>
-              Hadi takas yapalım
-            </ThemedText>
+            <View style={styles.brandRow}>
+              <Icon name="map-marker" size={14} color="#d46b58" />
+              <ThemedText style={styles.brandText}>Relove</ThemedText>
+            </View>
+            <ThemedText style={styles.locationText}>Üsküdar, İstanbul</ThemedText>
           </View>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Icon name="magnify" size={20} color={accent} />
+
+          <View style={styles.headerActions}>
+            <TouchableOpacity activeOpacity={0.85} style={styles.headerIconButton}>
+              <Icon name="shopping-outline" size={18} color="#2d241f" />
+              <View style={styles.notificationDot} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.iconButton, styles.headerIconsSpacing]}>
-              <Icon name="heart-outline" size={20} color={accent} />
-            </TouchableOpacity>
+            <Image
+              source={{
+                uri: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+              }}
+              style={styles.avatar}
+            />
           </View>
         </View>
 
-
-        <ImageBackground
-          source={{
-            uri: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1200&q=80",
-          }}
-          style={styles.hero}
-          imageStyle={styles.heroImage}
-        >
-          <View style={styles.heroOverlay} />
-          <ThemedText style={styles.heroTitle}>SONBAHAR KOLEKSİYONU</ThemedText>
-          <ThemedText style={styles.heroSubtitle}>senin için</ThemedText>
-        </ImageBackground>
-
-
-        <View style={styles.favoritesSection}>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={[styles.sectionTitle, { color: accent }]}>
-              Favori Takas Ürünleri
-            </ThemedText>
-            <TouchableOpacity>
-              <ThemedText style={[styles.sectionLink, { color: muted }]}>Tümü</ThemedText>
-            </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.9} style={styles.searchBar}>
+          <Icon name="magnify" size={18} color="#867c73" />
+          <ThemedText style={styles.searchPlaceholder}>
+            Search for clothes, decor...
+          </ThemedText>
+          <View style={styles.searchFilter}>
+            <Icon name="tune-variant" size={16} color="#53463f" />
           </View>
-          <FlatList
-            data={products}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.favoriteList}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.favoriteCard}
-                onPress={() => goToDetail(item.id)}
-                activeOpacity={0.9}
+        </TouchableOpacity>
+
+        <View style={styles.quickActionsRow}>
+          {quickActions.map((action) => (
+            <TouchableOpacity
+              key={action.id}
+              activeOpacity={0.9}
+              style={styles.quickActionItem}
+            >
+              <View
+                style={[styles.quickActionIcon, getQuickActionToneStyle(action.tone)]}
               >
-                <Image source={{ uri: item.images?.[0] ?? item.image }} style={styles.favoriteImage} />
-                <View style={styles.favoriteOverlay} />
-                <ThemedText style={styles.favoriteTitle} numberOfLines={1}>
+                <Icon name={action.icon} size={18} color="#46352c" />
+              </View>
+              <ThemedText style={styles.quickActionLabel}>{action.label}</ThemedText>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.shortcutRow}
+        >
+          {categoryShortcuts.map((shortcut) => (
+            <TouchableOpacity
+              key={shortcut.id}
+              activeOpacity={0.9}
+              style={styles.shortcutChip}
+            >
+              <Icon name={shortcut.icon} size={16} color="#2457ff" />
+              <ThemedText style={styles.shortcutLabel}>{shortcut.label}</ThemedText>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <SectionHeader
+          title="Smart Feed"
+          actionLabel="See all"
+          onPress={() => navigation.navigate("AllListings")}
+        />
+
+        <TouchableOpacity
+          activeOpacity={0.92}
+          style={styles.featuredCard}
+          onPress={() => goToDetail(featuredProduct.id)}
+        >
+          <Image source={{ uri: featuredProduct.image }} style={styles.featuredImage} />
+          <View style={styles.featuredBody}>
+            <ThemedText style={styles.featuredTitle}>{featuredProduct.title}</ThemedText>
+            <ThemedText style={styles.featuredSubtitle}>
+              {featuredProduct.description}
+            </ThemedText>
+            <View style={styles.featuredFooter}>
+              <ThemedText style={styles.featuredPrice}>
+                {formatPrice(featuredProduct)}
+              </ThemedText>
+              <TouchableOpacity activeOpacity={0.9} style={styles.primaryButton}>
+                <ThemedText style={styles.primaryButtonText}>Add</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.smallCardRow}>
+          {smallCards.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={0.92}
+              style={styles.smallCard}
+              onPress={() => goToDetail(item.id)}
+            >
+              <Image source={{ uri: item.image }} style={styles.smallCardImage} />
+              <View style={styles.smallCardContent}>
+                <ThemedText numberOfLines={1} style={styles.smallCardTitle}>
                   {item.title}
                 </ThemedText>
-              </TouchableOpacity>
-            )}
-          />
+                <ThemedText style={styles.smallCardPrice}>
+                  {formatPrice(item)}
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
 
+        <SectionHeader title="Community Gigs" actionLabel="See all" />
 
-        <View style={styles.gridHeader}>
-          <ThemedText style={[styles.sectionTitle, { color: accent }]}>İlanlar</ThemedText>
-          <TouchableOpacity onPress={() => navigation.navigate("AllListings")}>
-            <ThemedText style={[styles.sectionLink, { color: muted }]}>Tümü ve Sıralama</ThemedText>
+        <View style={styles.communityRow}>
+          {communityCards.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={0.92}
+              style={styles.communityCard}
+              onPress={() => goToDetail(item.id)}
+            >
+              <Image source={{ uri: item.image }} style={styles.communityImage} />
+              <ThemedText style={styles.communityPrice}>{item.price}</ThemedText>
+              <ThemedText style={styles.communityTitle}>{item.title}</ThemedText>
+              <ThemedText numberOfLines={1} style={styles.communitySubtitle}>
+                {item.subtitle}
+              </ThemedText>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.communityBanner}>
+          <ThemedText style={styles.communityBannerTitle}>
+            Join the Community!
+          </ThemedText>
+          <ThemedText style={styles.communityBannerText}>
+            Connect with people in your neighborhood and swap what you no longer
+            use.
+          </ThemedText>
+          <TouchableOpacity activeOpacity={0.9} style={styles.bannerButton}>
+            <ThemedText style={styles.bannerButtonText}>Start Swapping</ThemedText>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.grid}>
-          {products.slice(0, 10).map((item) => (
+        <SectionHeader title="Nearby You" />
+
+        <View style={styles.nearbyList}>
+          {nearbyItems.map((item) => (
             <TouchableOpacity
               key={item.id}
-              style={styles.card}
-              onPress={() => goToDetail(item.id)}
               activeOpacity={0.9}
+              style={styles.nearbyItem}
+              onPress={() => goToDetail(item.id)}
             >
-              <Image source={{ uri: item.image }} style={styles.cardImage} />
-              <View style={styles.cardTop}>
-                {item.badge ? (
-                  <View style={styles.badge}>
-                    <ThemedText style={styles.badgeText}>{item.badge}</ThemedText>
-                  </View>
-                ) : (
-                  <View />
-                )}
-                <TouchableOpacity style={styles.heart}>
-                  <Icon name="heart-outline" size={18} color={accent} />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.cardInfo}>
-                <ThemedText
-                  style={[styles.cardTitle, { color: accent }, styles.cardInfoTitleSpacing]}
-                >
+              <Image source={{ uri: item.image }} style={styles.nearbyImage} />
+              <View style={styles.nearbyContent}>
+                <ThemedText numberOfLines={1} style={styles.nearbyTitle}>
                   {item.title}
                 </ThemedText>
-                <ThemedText style={[styles.cardPrice, { color: accent }]}>
-                  {item.priceMin && item.priceMax
-                    ? `${item.priceMin} - ${item.priceMax} ₺`
-                    : `${item.currency} ${item.price}`}
+                <ThemedText numberOfLines={1} style={styles.nearbySubtitle}>
+                  {item.subtitle}
                 </ThemedText>
-                {item.category ? (
-                  <View style={styles.categoryTag}>
-                    <ThemedText style={styles.categoryText}>{item.category}</ThemedText>
-                  </View>
-                ) : null}
               </View>
+              <Icon name="chevron-right" size={20} color="#8f8378" />
             </TouchableOpacity>
           ))}
         </View>
@@ -142,199 +317,380 @@ const ListingScreen = ({ navigation }: { navigation: any }) => {
   );
 };
 
+type SectionHeaderProps = {
+  title: string;
+  actionLabel?: string;
+  onPress?: () => void;
+};
+
+const SectionHeader = ({ title, actionLabel, onPress }: SectionHeaderProps) => (
+  <View style={styles.sectionHeader}>
+    <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
+    {actionLabel ? (
+      <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
+        <ThemedText style={styles.sectionAction}>{actionLabel}</ThemedText>
+      </TouchableOpacity>
+    ) : null}
+  </View>
+);
+
 export default ListingScreen;
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
+    backgroundColor: "#fcf5ef",
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 24,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fcf5ef",
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#53463f",
   },
   header: {
-    paddingHorizontal: 18,
-    paddingTop: 6,
-    paddingBottom: 14,
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "center",
   },
-  greeting: {
-    fontSize: 20,
-    fontWeight: "800",
-  },
-  subtitle: {
-    fontSize: 13,
-    marginTop: 2,
-    fontWeight: "500",
-  },
-  headerIcons: {
+  brandRow: {
     flexDirection: "row",
-  },
-  headerIconsSpacing: {
-    marginLeft: 10,
-  },
-  iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "#ffffff",
     alignItems: "center",
+    gap: 4,
+    marginBottom: 4,
+  },
+  brandText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#2e241f",
+  },
+  locationText: {
+    fontSize: 12,
+    fontWeight: "500",
+    opacity: 0.7,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerIconButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#fff2e4",
     justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  notificationDot: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#ff6c57",
+  },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+  },
+  searchBar: {
+    marginTop: 16,
+    marginBottom: 16,
+    backgroundColor: "#fffaf5",
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#e0c3a7",
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
     elevation: 3,
   },
-  hero: {
-    marginHorizontal: 18,
-    borderRadius: 16,
-    overflow: "hidden",
-    height: 150,
-    marginTop: 20,
-    marginBottom: 10,
-    justifyContent: "flex-end",
-    padding: 16,
-  },
-  heroImage: {
-    borderRadius: 16,
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.2)",
-  },
-  heroTitle: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  heroSubtitle: {
-    color: "#f1f3f5",
-    marginTop: 4,
-    fontWeight: "600",
+  searchPlaceholder: {
+    flex: 1,
+    marginLeft: 10,
     fontSize: 13,
+    color: "#8a7e74",
   },
-  gridHeader: {
-    paddingHorizontal: 18,
-    marginBottom: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
+  searchFilter: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#f5e8dc",
+    justifyContent: "center",
     alignItems: "center",
   },
-  favoritesSection: {
-    marginVertical: 30,
+  quickActionsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  quickActionItem: {
+    alignItems: "center",
+    width: "23%",
+  },
+  quickActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+  },
+  quickActionTrade: {
+    backgroundColor: "#f7b6a9",
+  },
+  quickActionBuy: {
+    backgroundColor: "#c8d7ff",
+  },
+  quickActionCheck: {
+    backgroundColor: "#f9d2a8",
+  },
+  quickActionMeet: {
+    backgroundColor: "#d5c4ff",
+  },
+  quickActionLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#6d5f56",
+  },
+  shortcutRow: {
+    paddingBottom: 18,
+    gap: 10,
+  },
+  shortcutChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#eef3ff",
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  shortcutLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#2457ff",
   },
   sectionHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 18,
+    justifyContent: "space-between",
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  sectionLink: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  favoriteList: {
-    paddingHorizontal: 18,
-  },
-  favoriteCard: {
-    width: 90,
-    height: 90,
-    borderWidth: 2,
-    borderRadius: 45,
-    overflow: "hidden",
-    marginRight: 12,
-    marginBottom: 20,
-    backgroundColor: "#e5e7eb",
-  },
-  favoriteImage: {
-    width: "100%",
-    height: "100%",
-  },
-  favoriteOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.25)",
-  },
-  favoriteTitle: {
-    position: "absolute",
-    bottom: 10,
-    left: 8,
-    right: 8,
-    color: "#ffffff",
-    fontWeight: "800",
-    fontSize: 13,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    paddingHorizontal: 18,
-    paddingBottom: 30,
-  },
-  card: {
-    width: "47%",
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    overflow: "hidden",
-    elevation: 4,
-    marginBottom: 14,
-  },
-  cardImage: {
-    width: "100%",
-    height: 150,
-  },
-  cardTop: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    right: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  badge: {
-    backgroundColor: "rgba(255,255,255,0.9)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  badgeText: {
-    fontSize: 11,
+    fontSize: 18,
     fontWeight: "700",
-    color: "#1b1d1f",
+    color: "#2f2520",
   },
-  heart: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.92)",
-    alignItems: "center",
-    justifyContent: "center",
+  sectionAction: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#4674ff",
   },
-  cardInfo: {
+  featuredCard: {
+    backgroundColor: "#fffdf9",
+    borderRadius: 22,
     padding: 12,
+    marginBottom: 14,
+    shadowColor: "#d3b299",
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
   },
-  cardInfoTitleSpacing: {
+  featuredImage: {
+    width: "100%",
+    height: 132,
+    borderRadius: 18,
+    marginBottom: 10,
+  },
+  featuredBody: {
+    gap: 6,
+  },
+  featuredTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#2f2520",
+  },
+  featuredSubtitle: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#7d6f65",
+  },
+  featuredFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  featuredPrice: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#2f2520",
+  },
+  primaryButton: {
+    backgroundColor: "#2457ff",
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+  },
+  primaryButtonText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  smallCardRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 18,
+  },
+  smallCard: {
+    flex: 1,
+    backgroundColor: "#fffdf9",
+    borderRadius: 18,
+    padding: 8,
+    shadowColor: "#dcc0a6",
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  smallCardImage: {
+    width: "100%",
+    height: 94,
+    borderRadius: 14,
+    marginBottom: 8,
+  },
+  smallCardContent: {
+    gap: 2,
+  },
+  smallCardTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#342923",
+  },
+  smallCardPrice: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#2457ff",
+  },
+  communityRow: {
+    flexDirection: "row",
+    gap: 14,
+    marginBottom: 18,
+  },
+  communityCard: {
+    flex: 1,
+    backgroundColor: "#fffdf9",
+    borderRadius: 20,
+    padding: 10,
+    alignItems: "center",
+    shadowColor: "#dcc0a6",
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  communityImage: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    marginBottom: 10,
+  },
+  communityPrice: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#2f2520",
     marginBottom: 4,
   },
-  cardTitle: {
-    fontSize: 14,
+  communityTitle: {
+    fontSize: 12,
     fontWeight: "700",
+    color: "#2f2520",
   },
-  cardPrice: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  categoryTag: {
-    marginTop: 6,
-    alignSelf: "flex-start",
-    backgroundColor: "#eef1f6",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  categoryText: {
+  communitySubtitle: {
     fontSize: 11,
+    color: "#8b7e73",
+    marginTop: 2,
+  },
+  communityBanner: {
+    backgroundColor: "#f6d9cf",
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 18,
+  },
+  communityBannerTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#37261f",
+    marginBottom: 6,
+  },
+  communityBannerText: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#6d584e",
+    marginBottom: 14,
+  },
+  bannerButton: {
+    alignSelf: "flex-start",
+    backgroundColor: "#3b2419",
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  bannerButtonText: {
+    color: "#fff8f2",
+    fontSize: 12,
     fontWeight: "700",
-    color: "#49505a",
+  },
+  nearbyList: {
+    gap: 10,
+  },
+  nearbyItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fffdf9",
+    borderRadius: 18,
+    padding: 10,
+    shadowColor: "#dcc0a6",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  nearbyImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  nearbyContent: {
+    flex: 1,
+    gap: 2,
+  },
+  nearbyTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#342923",
+  },
+  nearbySubtitle: {
+    fontSize: 12,
+    color: "#8b7e73",
   },
 });

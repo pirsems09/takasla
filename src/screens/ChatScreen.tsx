@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,16 +7,41 @@ import {
   Image,
   TextInput,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ThemedText } from "../components/ThemedText";
-import { messages, threads } from "../data/mockData";
+import { useChatStore } from "../store/chatStore";
+import { useTheme } from "../hooks/useTheme";
+import type { ChatScreenProps } from "../navigation/types";
 
-const ChatScreen = ({ route }: { route: any }) => {
-  const accent = "#1b1d1f";
+const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
+  const { colors } = useTheme();
   const { threadId } = route?.params || {};
-  const activeThread = threads.find((t) => t.id === threadId) ?? threads[0];
-  const filteredMessages = messages.filter((m) => m.threadId === activeThread.id);
+  const threads = useChatStore((s) => s.threads);
+  const messagesByThread = useChatStore((s) => s.messages);
+  const fetchMessages = useChatStore((s) => s.fetchMessages);
+  const subscribeToThread = useChatStore((s) => s.subscribeToThread);
+  const sendMessage = useChatStore((s) => s.sendMessage);
+
+  const activeThread = threads.find((t) => t.id === threadId);
+  const filteredMessages = messagesByThread[threadId] ?? [];
+  const listRef = useRef<FlatList | null>(null);
+  const [inputText, setInputText] = useState("");
+
+  useEffect(() => {
+    if (!threadId) return;
+    fetchMessages(threadId);
+    const unsubscribe = subscribeToThread(threadId);
+    return unsubscribe;
+  }, [threadId, fetchMessages, subscribeToThread]);
+
+  const handleSend = () => {
+    if (!threadId) return;
+    sendMessage(threadId, inputText);
+    setInputText("");
+  };
 
   const renderMessage = ({ item }: any) => {
     const isMe = item.from === "me";
@@ -28,12 +53,14 @@ const ChatScreen = ({ route }: { route: any }) => {
         ]}
       >
         {!isMe ? (
-          <Image source={{ uri: activeThread.avatar }} style={styles.avatar} />
+          <Image source={{ uri: activeThread?.avatar ?? "" }} style={styles.avatar} />
         ) : null}
         <View
           style={[
             styles.bubble,
-            isMe ? styles.bubbleMe : styles.bubbleOther,
+            isMe
+              ? { backgroundColor: colors.chatBubbleMe, marginRight: 8 }
+              : { backgroundColor: colors.chatBubbleOther, marginLeft: 8 },
           ]}
         >
           {item.previewImage ? (
@@ -45,12 +72,14 @@ const ChatScreen = ({ route }: { route: any }) => {
           <ThemedText
             style={[
               styles.messageText,
-              { color: isMe ? accent : "#2e3136" },
+              { color: isMe ? colors.accent : colors.text },
             ]}
           >
             {item.text}
           </ThemedText>
-          <ThemedText style={styles.time}>{item.time}</ThemedText>
+          <ThemedText style={[styles.time, { color: colors.textSecondary }]}>
+            {item.time}
+          </ThemedText>
         </View>
         {isMe ? (
           <Image
@@ -65,48 +94,81 @@ const ChatScreen = ({ route }: { route: any }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "#e9edf3" }]}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.headerIcon}>
-          <Icon name="chevron-left" size={22} color={accent} />
-        </TouchableOpacity>
-        <View style={styles.headerText}>
-          <ThemedText style={[styles.name, { color: accent }]}>
-            {activeThread.name}
-          </ThemedText>
-          <ThemedText style={styles.status}>çevrimiçi</ThemedText>
-        </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerIcon}>
-            <Icon name="phone-outline" size={18} color={accent} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.chatBackground }]}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        <View style={[styles.header, { backgroundColor: colors.chatBackground }]}>
+          <TouchableOpacity
+            style={[styles.headerIcon, { backgroundColor: colors.surface }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="chevron-left" size={22} color={colors.accent} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.headerIcon, styles.headerActionSpacing]}>
-            <Icon name="video-outline" size={18} color={accent} />
-          </TouchableOpacity>
+          <View style={styles.headerText}>
+            <ThemedText style={[styles.name, { color: colors.accent }]}>
+              {activeThread?.name ?? "Sohbet"}
+            </ThemedText>
+            <ThemedText style={[styles.status, { color: colors.online }]}>
+              çevrimiçi
+            </ThemedText>
+          </View>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={[styles.headerIcon, { backgroundColor: colors.surface }]}>
+              <Icon name="phone-outline" size={18} color={colors.accent} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.headerIcon,
+                styles.headerActionSpacing,
+                { backgroundColor: colors.surface },
+              ]}
+            >
+              <Icon name="video-outline" size={18} color={colors.accent} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      <FlatList
-        data={filteredMessages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
-
-      <View style={styles.inputBar}>
-        <TouchableOpacity style={styles.addButton}>
-          <Icon name="plus" size={18} color="#d8ff57" />
-        </TouchableOpacity>
-        <TextInput
-          placeholder="Mesaj yaz..."
-          placeholderTextColor="#9ca0a8"
-          style={styles.textInput}
+        <FlatList
+          ref={listRef}
+          data={filteredMessages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() =>
+            listRef.current?.scrollToEnd({ animated: true })
+          }
         />
-        <TouchableOpacity style={[styles.sendButton, styles.headerActionSpacing]}>
-          <Icon name="send" size={18} color="#1b1d1f" />
-        </TouchableOpacity>
-      </View>
+
+        <View style={[styles.inputBar, { backgroundColor: colors.chatInputBar }]}>
+          <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accentSurface }]}>
+            <Icon name="plus" size={18} color={colors.highlight} />
+          </TouchableOpacity>
+          <TextInput
+            placeholder="Mesaj yaz..."
+            placeholderTextColor={colors.textMuted}
+            value={inputText}
+            onChangeText={setInputText}
+            style={[
+              styles.textInput,
+              { backgroundColor: colors.surface, color: colors.text },
+            ]}
+          />
+          <TouchableOpacity
+            onPress={handleSend}
+            style={[
+              styles.sendButton,
+              styles.headerActionSpacing,
+              { backgroundColor: colors.chatInputButton },
+            ]}
+          >
+            <Icon name="send" size={18} color={colors.accent} />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -117,18 +179,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  flex: {
+    flex: 1,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 18,
     paddingVertical: 12,
-    backgroundColor: "#e9edf3",
   },
   headerIcon: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
     elevation: 3,
@@ -143,8 +206,8 @@ const styles = StyleSheet.create({
   },
   status: {
     fontSize: 12,
-    color: "#7a7d82",
     fontWeight: "600",
+    marginTop: 2,
   },
   headerActions: {
     flexDirection: "row",
@@ -173,21 +236,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  bubbleOther: {
-    backgroundColor: "#ffffff",
-    marginLeft: 8,
-  },
-  bubbleMe: {
-    backgroundColor: "#d8ff57",
-    marginRight: 8,
-  },
   messageText: {
     fontSize: 14,
     fontWeight: "600",
   },
   time: {
     fontSize: 11,
-    color: "#7a7d82",
     marginTop: 6,
   },
   avatar: {
@@ -203,26 +257,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   inputBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
-    backgroundColor: "#e9edf3",
   },
   addButton: {
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: "#2c2f33",
     alignItems: "center",
     justifyContent: "center",
   },
   textInput: {
     flex: 1,
-    backgroundColor: "#ffffff",
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -233,7 +280,6 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: "#d8ff57",
     alignItems: "center",
     justifyContent: "center",
   },

@@ -1,8 +1,12 @@
-import React, { useMemo, useState } from "react";
-import { View, StyleSheet, ScrollView, Image, TouchableOpacity, SafeAreaView } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { View, StyleSheet, ScrollView, Image, TouchableOpacity, SafeAreaView, ActivityIndicator } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ThemedText } from "../components/ThemedText";
-import { products } from "../data/mockData";
+import { useListingStore } from "../store/listingStore";
+import { useTheme } from "../hooks/useTheme";
+import { useFavoriteStore } from "../store/favoriteStore";
+import { parsePrice, formatPrice } from "../utils/format";
+import type { RootNavigation } from "../navigation/types";
 
 type SortKey = "recommend" | "priceAsc" | "priceDesc";
 
@@ -12,26 +16,54 @@ const sortOptions: { label: string; key: SortKey }[] = [
   { label: "Fiyat Azalan", key: "priceDesc" },
 ];
 
-const parsePrice = (product: any) => {
-  const value = product.priceMin ?? product.price ?? "0";
-  return Number(value);
-};
-
-const AllListingsScreen = ({ navigation }: { navigation: any }) => {
-  const accent = "#1b1d1f";
-  const muted = "#7a7d82";
+const AllListingsScreen = ({ navigation }: { navigation: RootNavigation }) => {
+  const { colors } = useTheme();
   const [sortKey, setSortKey] = useState<SortKey>("recommend");
 
-  const sortedProducts = useMemo(() => {
-    if (sortKey === "recommend") return products;
-    const sorted = [...products].sort((a, b) => parsePrice(a) - parsePrice(b));
-    return sortKey === "priceAsc" ? sorted : sorted.reverse();
-  }, [sortKey]);
+  const listings = useListingStore((s) => s.listings);
+  const loading = useListingStore((s) => s.loading);
+  const fetchListings = useListingStore((s) => s.fetchListings);
 
-  const goToDetail = (productId: string) => navigation.navigate("ProductDetail", { productId });
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
+
+  const favoriteIds = useFavoriteStore((state) => state.favoriteIds);
+  const toggleFavorite = useFavoriteStore((state) => state.toggleFavorite);
+
+  const sortedProducts = useMemo(() => {
+    if (sortKey === "recommend") return listings;
+    const sorted = [...listings].sort((a, b) => parsePrice(a) - parsePrice(b));
+    return sortKey === "priceAsc" ? sorted : sorted.reverse();
+  }, [sortKey, listings]);
+
+  const goToDetail = (productId: string) =>
+    navigation.navigate("ProductDetail", { productId });
+
+  if (loading && listings.length === 0) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!loading && listings.length === 0) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.loadingWrap}>
+          <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
+            Henüz ilan bulunmuyor.
+          </ThemedText>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "#f5f7fb" }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.filterRow}>
         {sortOptions.map((option) => {
           const active = sortKey === option.key;
@@ -40,11 +72,11 @@ const AllListingsScreen = ({ navigation }: { navigation: any }) => {
               key={option.key}
               style={[
                 styles.filterPill,
-                active && { backgroundColor: "#1b1d1f" },
+                { backgroundColor: active ? colors.accent : colors.surfaceAlt },
               ]}
               onPress={() => setSortKey(option.key)}
             >
-              <ThemedText style={[styles.filterText, { color: active ? "#ffffff" : accent }]}>
+              <ThemedText style={[styles.filterText, { color: active ? colors.textOnAccent : colors.accent }]}>
                 {option.label}
               </ThemedText>
             </TouchableOpacity>
@@ -56,7 +88,7 @@ const AllListingsScreen = ({ navigation }: { navigation: any }) => {
         {sortedProducts.map((item) => (
           <TouchableOpacity
             key={item.id}
-            style={styles.card}
+            style={[styles.card, { backgroundColor: colors.surface }]}
             onPress={() => goToDetail(item.id)}
             activeOpacity={0.9}
           >
@@ -64,27 +96,36 @@ const AllListingsScreen = ({ navigation }: { navigation: any }) => {
             <View style={styles.cardTop}>
               {item.badge ? (
                 <View style={styles.badge}>
-                  <ThemedText style={styles.badgeText}>{item.badge}</ThemedText>
+                  <ThemedText style={[styles.badgeText, { color: colors.accent }]}>
+                    {item.badge}
+                  </ThemedText>
                 </View>
               ) : (
                 <View />
               )}
-              <TouchableOpacity style={styles.heart}>
-                <Icon name="heart-outline" size={18} color={accent} />
+              <TouchableOpacity
+                style={styles.heart}
+                onPress={() => toggleFavorite(item.id)}
+              >
+                <Icon
+                  name={favoriteIds[item.id] ? "heart" : "heart-outline"}
+                  size={18}
+                  color={favoriteIds[item.id] ? colors.favoriteActive : colors.accent}
+                />
               </TouchableOpacity>
             </View>
             <View style={styles.cardInfo}>
-              <ThemedText style={[styles.cardTitle, { color: accent }, styles.cardInfoTitleSpacing]}>
+              <ThemedText style={[styles.cardTitle, { color: colors.accent }, styles.cardInfoTitleSpacing]}>
                 {item.title}
               </ThemedText>
-              <ThemedText style={[styles.cardPrice, { color: accent }]}>
-                {item.priceMin && item.priceMax
-                  ? `${item.priceMin} - ${item.priceMax} ₺`
-                  : `${item.currency} ${item.price}`}
+              <ThemedText style={[styles.cardPrice, { color: colors.accent }]}>
+                {formatPrice(item)}
               </ThemedText>
               {item.category ? (
-                <View style={styles.categoryTag}>
-                  <ThemedText style={styles.categoryText}>{item.category}</ThemedText>
+                <View style={[styles.categoryTag, { backgroundColor: colors.surfaceAlt }]}>
+                  <ThemedText style={[styles.categoryText, { color: colors.textSecondary }]}>
+                    {item.category}
+                  </ThemedText>
                 </View>
               ) : null}
             </View>
@@ -101,6 +142,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  loadingWrap: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  emptyText: {
+    fontSize: 14,
+    textAlign: "center",
+  },
   filterRow: {
     flexDirection: "row",
     paddingHorizontal: 16,
@@ -112,7 +163,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "#e9ecf4",
   },
   filterText: {
     fontSize: 13,
@@ -128,7 +178,6 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "47%",
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     overflow: "hidden",
     elevation: 4,
@@ -155,7 +204,6 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#1b1d1f",
   },
   heart: {
     width: 28,
@@ -182,7 +230,6 @@ const styles = StyleSheet.create({
   categoryTag: {
     marginTop: 6,
     alignSelf: "flex-start",
-    backgroundColor: "#eef1f6",
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -190,6 +237,5 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#49505a",
   },
 });

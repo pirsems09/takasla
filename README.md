@@ -30,6 +30,8 @@ npm run android
 
 # OR using Yarn
 yarn android
+
+emulator -avd Pixel_10
 ```
 
 ### iOS

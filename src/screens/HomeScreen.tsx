@@ -6,7 +6,7 @@ import { useThemeStore } from "../store/themeStore";
 import { ThemedText } from "../components/ThemedText";
 
 const HomeScreen = ({ navigation }: { navigation: any }) => {
-    const { colors, theme } = useTheme();
+    const { colors } = useTheme();
     const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
     return (

@@ -14,6 +14,7 @@ import FavoritesScreen from "../screens/FavoritesScreen";
 import CreateListingScreen from "../screens/CreateListingScreen";
 import ChatHistoryScreen from "../screens/ChatHistoryScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import { useTheme } from "../hooks/useTheme";
 
 const Tab = createBottomTabNavigator();
 
@@ -37,6 +38,7 @@ const AnimatedTabBar = ({
   descriptors,
   navigation,
 }: any) => {
+  const { colors } = useTheme();
   const [layouts, setLayouts] = useState<{ x: number; width: number }[]>([]);
   const translateX = useRef(new Animated.Value(0)).current;
 
@@ -58,7 +60,7 @@ const AnimatedTabBar = ({
   };
 
   return (
-    <View style={[styles.tabContainer, { backgroundColor: "#1b1d1f" }]}>
+    <View style={[styles.tabContainer, { backgroundColor: colors.tabBackground }]}>
       {layouts[state.index] ? (
         <Animated.View
           style={[
@@ -66,7 +68,7 @@ const AnimatedTabBar = ({
             {
               transform: [{ translateX }],
               width: layouts[state.index].width,
-              backgroundColor: "#2c2f33",
+              backgroundColor: colors.tabPill,
             },
           ]}
         />
@@ -113,13 +115,13 @@ const AnimatedTabBar = ({
             <Icon
               name={tabIcons[route.name as TabRoute]}
               size={22}
-                color={isFocused ? "#f6f7fb" : "#8f939b"}
-                style={{ marginBottom: 4 }}
+              color={isFocused ? colors.tabActive : colors.tabInactive}
+              style={{ marginBottom: 4 }}
             />
             <Text
               style={[
                 styles.tabLabel,
-                { color: isFocused ? "#f6f7fb" : "#8f939b" },
+                { color: isFocused ? colors.tabActive : colors.tabInactive },
               ]}
             >
               {label}
@@ -153,7 +155,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 18,
     marginBottom: 12,
     marginTop: 8,
-    backgroundColor: "#1b1d1f",
     borderRadius: 18,
     padding: 6,
     alignItems: "center",
